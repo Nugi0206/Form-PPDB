@@ -1,0 +1,6 @@
+{
+  "name": "PPDB Online RA Darusyifa Arjawinangun",
+  "description": "Sistem Penerimaan Peserta Didik Baru (PPDB) Online RA Darusyifa Arjawinangun – Terakreditasi B, Pendidikan Islami Berkualitas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

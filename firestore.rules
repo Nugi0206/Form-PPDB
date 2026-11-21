@@ -1,0 +1,585 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL PRIMITIVE HELPERS ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isRootAdminEmail() {
+      return isVerifiedUser() && request.auth.token.email == 'muhamadnugiandri@gmail.com';
+    }
+
+    function emailToKey(email) {
+      return email.lower().replace('[^a-z0-9]', '_');
+    }
+
+    function isAdmin() {
+      return isRootAdminEmail() || (
+        isVerifiedUser() && (
+          (
+            exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+            get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true
+          ) || (
+            request.auth.token.email is string &&
+            exists(/databases/$(database)/documents/admins/$(emailToKey(request.auth.token.email))) &&
+            get(/databases/$(database)/documents/admins/$(emailToKey(request.auth.token.email))).data.active == true
+          )
+        )
+      );
+    }
+
+    function isValidStr(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isOptStr(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS ---
+
+    function isValidAcademicYear(data) {
+      return data.keys().hasAll([
+        'yearLabel', 'yearCode', 'isActive', 'isOpen', 'currentSequence',
+        'maxFileSizeMb', 'schoolPhone', 'schoolWhatsapp', 'schoolEmail',
+        'schoolAddress', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'yearLabel', 'yearCode', 'isActive', 'isOpen', 'currentSequence',
+        'lastRegistrationId', 'maxFileSizeMb', 'schoolPhone', 'schoolWhatsapp',
+        'schoolEmail', 'schoolAddress', 'announcementNote', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidStr(data.yearLabel, 4, 20) &&
+      isValidStr(data.yearCode, 4, 4) && data.yearCode.matches('^[0-9]{4}$') &&
+      data.isActive is bool &&
+      data.isOpen is bool &&
+      data.currentSequence is int && data.currentSequence >= 0 &&
+      (!('lastRegistrationId' in data) || isOptStr(data.lastRegistrationId, 128)) &&
+      data.maxFileSizeMb is int && data.maxFileSizeMb >= 1 && data.maxFileSizeMb <= 15 &&
+      isOptStr(data.schoolPhone, 30) &&
+      isOptStr(data.schoolWhatsapp, 30) &&
+      isOptStr(data.schoolEmail, 120) &&
+      isOptStr(data.schoolAddress, 300) &&
+      (!('announcementNote' in data) || isOptStr(data.announcementNote, 500)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDefaultBootstrapYear(data) {
+      return isValidAcademicYear(data) &&
+        data.yearLabel == '2027/2028' &&
+        data.yearCode == '2027' &&
+        data.isActive == true &&
+        data.isOpen == true &&
+        data.currentSequence == 0 &&
+        data.maxFileSizeMb == 5 &&
+        data.createdAt == request.time &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'active', 'createdAt', 'updatedAt']) &&
+      data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'active', 'addedBy', 'createdAt', 'updatedAt']) &&
+      isValidId(data.uid) &&
+      isValidStr(data.email, 5, 160) &&
+      isValidStr(data.displayName, 1, 120) &&
+      data.role in ['super_admin', 'admin', 'bendahara'] &&
+      data.active is bool &&
+      (!('addedBy' in data) || isOptStr(data.addedBy, 160)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidRegistration(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'registrationNumber', 'sequenceNumber', 'academicYearId', 'academicYearLabel',
+        'fullName', 'nickname', 'gender', 'nik', 'kkNumber', 'birthPlace', 'birthDate',
+        'ageYears', 'ageMonths', 'religion', 'childOrder', 'heightCm', 'weightKg',
+        'address', 'village', 'district', 'city', 'province', 'educationDuration',
+        'program', 'primaryParentName', 'primaryWhatsapp', 'registrationStatus',
+        'paymentStatusSummary', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'registrationNumber', 'sequenceNumber', 'academicYearId', 'academicYearLabel',
+        'fullName', 'nickname', 'gender', 'nik', 'kkNumber', 'birthPlace', 'birthDate',
+        'ageYears', 'ageMonths', 'religion', 'childOrder', 'heightCm', 'weightKg',
+        'address', 'village', 'district', 'city', 'province', 'previousSchool', 'educationDuration',
+        'program', 'scholarshipReason', 'scholarshipVerificationAgreed',
+        'referralSource', 'reasonChoosingSchool', 'childInterests', 'parentExpectations',
+        'primaryParentName', 'primaryWhatsapp', 'registrationStatus', 'paymentStatusSummary',
+        'verificationNote', 'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      isValidStr(data.registrationNumber, 10, 32) && data.registrationNumber.matches('^PPDB-[0-9]{4}-[0-9]{4,}$') &&
+      data.sequenceNumber is int && data.sequenceNumber >= 1 &&
+      isValidId(data.academicYearId) &&
+      isValidStr(data.academicYearLabel, 4, 20) &&
+      isValidStr(data.fullName, 2, 120) &&
+      isValidStr(data.nickname, 1, 60) &&
+      data.gender in ['Laki-laki', 'Perempuan'] &&
+      isValidStr(data.nik, 16, 16) && data.nik.matches('^[0-9]{16}$') &&
+      isValidStr(data.kkNumber, 16, 16) && data.kkNumber.matches('^[0-9]{16}$') &&
+      isValidStr(data.birthPlace, 2, 80) &&
+      isValidStr(data.birthDate, 10, 20) && data.birthDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+      data.ageYears is int && data.ageYears >= 0 && data.ageYears <= 15 &&
+      data.ageMonths is int && data.ageMonths >= 0 && data.ageMonths <= 11 &&
+      isValidStr(data.religion, 2, 30) &&
+      data.childOrder is int && data.childOrder >= 1 && data.childOrder <= 20 &&
+      (data.heightCm is int || data.heightCm is float) && data.heightCm >= 30 && data.heightCm <= 200 &&
+      (data.weightKg is int || data.weightKg is float) && data.weightKg >= 5 && data.weightKg <= 100 &&
+      isValidStr(data.address, 5, 300) &&
+      isValidStr(data.village, 2, 80) &&
+      isValidStr(data.district, 2, 80) &&
+      isValidStr(data.city, 2, 80) &&
+      isValidStr(data.province, 2, 80) &&
+      (!('previousSchool' in data) || isOptStr(data.previousSchool, 120)) &&
+      data.educationDuration in ['1 tahun', '2 tahun'] &&
+      data.program in [
+        'Reguler',
+        'Beasiswa Anak Yatim Piatu',
+        'Beasiswa Anak Yatim',
+        'Program Alumni',
+        'Beasiswa Tahfidz Al-Qur\'an'
+      ] &&
+      (!('scholarshipReason' in data) || isOptStr(data.scholarshipReason, 1000)) &&
+      (!('scholarshipVerificationAgreed' in data) || data.scholarshipVerificationAgreed is bool) &&
+      (!('referralSource' in data) || isOptStr(data.referralSource, 120)) &&
+      (!('reasonChoosingSchool' in data) || isOptStr(data.reasonChoosingSchool, 600)) &&
+      (!('childInterests' in data) || isOptStr(data.childInterests, 400)) &&
+      (!('parentExpectations' in data) || isOptStr(data.parentExpectations, 600)) &&
+      isValidStr(data.primaryParentName, 2, 120) &&
+      isValidStr(data.primaryWhatsapp, 6, 30) &&
+      data.registrationStatus in [
+        'Terdaftar',
+        'Menunggu Verifikasi',
+        'Perlu Perbaikan',
+        'Menunggu Pembayaran',
+        'Menunggu Keputusan',
+        'Diterima',
+        'Ditolak',
+        'Mengundurkan Diri'
+      ] &&
+      data.paymentStatusSummary in [
+        'Belum Bayar',
+        'Menunggu Verifikasi',
+        'Cicilan Tahap 1',
+        'Cicilan Tahap 2',
+        'Cicilan Tahap 3',
+        'Lunas',
+        'Ditolak'
+      ] &&
+      (!('verificationNote' in data) || isOptStr(data.verificationNote, 1000)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidParents(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'fatherName', 'fatherStatus', 'motherName', 'motherStatus', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'fatherName', 'fatherStatus', 'fatherNik', 'fatherBirthPlaceDate',
+        'fatherEducation', 'fatherOccupation', 'fatherWhatsapp',
+        'motherName', 'motherStatus', 'motherNik', 'motherBirthPlaceDate',
+        'motherEducation', 'motherOccupation', 'motherWhatsapp',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      isValidStr(data.fatherName, 2, 120) &&
+      data.fatherStatus in ['Masih Hidup', 'Meninggal Dunia'] &&
+      (!('fatherNik' in data) || isOptStr(data.fatherNik, 16)) &&
+      (!('fatherBirthPlaceDate' in data) || isOptStr(data.fatherBirthPlaceDate, 100)) &&
+      (!('fatherEducation' in data) || isOptStr(data.fatherEducation, 60)) &&
+      (!('fatherOccupation' in data) || isOptStr(data.fatherOccupation, 80)) &&
+      (!('fatherWhatsapp' in data) || isOptStr(data.fatherWhatsapp, 30)) &&
+      isValidStr(data.motherName, 2, 120) &&
+      data.motherStatus in ['Masih Hidup', 'Meninggal Dunia'] &&
+      (!('motherNik' in data) || isOptStr(data.motherNik, 16)) &&
+      (!('motherBirthPlaceDate' in data) || isOptStr(data.motherBirthPlaceDate, 100)) &&
+      (!('motherEducation' in data) || isOptStr(data.motherEducation, 60)) &&
+      (!('motherOccupation' in data) || isOptStr(data.motherOccupation, 80)) &&
+      (!('motherWhatsapp' in data) || isOptStr(data.motherWhatsapp, 30)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidGuardians(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'livesWith', 'emergencyContactName', 'emergencyContactPhone', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'livesWith', 'guardianName', 'guardianRelation',
+        'guardianWhatsapp', 'guardianAddress', 'emergencyContactName', 'emergencyContactPhone',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      data.livesWith in ['Ayah dan Ibu', 'Ayah', 'Ibu', 'Wali', 'Lainnya'] &&
+      (!('guardianName' in data) || isOptStr(data.guardianName, 120)) &&
+      (!('guardianRelation' in data) || isOptStr(data.guardianRelation, 60)) &&
+      (!('guardianWhatsapp' in data) || isOptStr(data.guardianWhatsapp, 30)) &&
+      (!('guardianAddress' in data) || isOptStr(data.guardianAddress, 300)) &&
+      isValidStr(data.emergencyContactName, 2, 120) &&
+      isValidStr(data.emergencyContactPhone, 8, 30) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidHealth(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'hasDiseaseHistory', 'hasAllergy', 'takesRoutineMedication',
+        'hasSpecialHealthCondition', 'hasSpecialNeeds', 'communicationAbility',
+        'eatingIndependence', 'toiletIndependence', 'socializationAbility', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'hasDiseaseHistory', 'diseaseHistoryDetail',
+        'hasAllergy', 'allergyDetail', 'takesRoutineMedication', 'routineMedicationDetail',
+        'hasSpecialHealthCondition', 'specialHealthConditionDetail',
+        'hasSpecialNeeds', 'specialNeedsDetail',
+        'communicationAbility', 'eatingIndependence', 'toiletIndependence',
+        'socializationAbility', 'characterAndDevelopmentNote', 'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      data.hasDiseaseHistory is bool &&
+      (!('diseaseHistoryDetail' in data) || isOptStr(data.diseaseHistoryDetail, 400)) &&
+      data.hasAllergy is bool &&
+      (!('allergyDetail' in data) || isOptStr(data.allergyDetail, 400)) &&
+      data.takesRoutineMedication is bool &&
+      (!('routineMedicationDetail' in data) || isOptStr(data.routineMedicationDetail, 400)) &&
+      data.hasSpecialHealthCondition is bool &&
+      (!('specialHealthConditionDetail' in data) || isOptStr(data.specialHealthConditionDetail, 400)) &&
+      data.hasSpecialNeeds is bool &&
+      (!('specialNeedsDetail' in data) || isOptStr(data.specialNeedsDetail, 400)) &&
+      isValidStr(data.communicationAbility, 1, 200) &&
+      isValidStr(data.eatingIndependence, 1, 200) &&
+      isValidStr(data.toiletIndependence, 1, 200) &&
+      isValidStr(data.socializationAbility, 1, 200) &&
+      (!('characterAndDevelopmentNote' in data) || isOptStr(data.characterAndDevelopmentNote, 600)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDocStatus(st) {
+      return st in ['Belum Diunggah', 'Menunggu Verifikasi', 'Valid', 'Perlu Perbaikan'];
+    }
+
+    function isValidDocuments(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'kkStatus', 'birthCertStatus', 'fatherKtpStatus',
+        'motherKtpStatus', 'childPhotoStatus', 'orphanCertStatus', 'tahfidzCertStatus',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId',
+        'kkUrl', 'kkName', 'kkStatus',
+        'birthCertUrl', 'birthCertName', 'birthCertStatus',
+        'fatherKtpUrl', 'fatherKtpName', 'fatherKtpStatus',
+        'motherKtpUrl', 'motherKtpName', 'motherKtpStatus',
+        'childPhotoUrl', 'childPhotoName', 'childPhotoStatus',
+        'orphanCertUrl', 'orphanCertName', 'orphanCertStatus',
+        'tahfidzCertUrl', 'tahfidzCertName', 'tahfidzCertStatus',
+        'documentNote', 'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      (!('kkUrl' in data) || isOptStr(data.kkUrl, 1000)) &&
+      (!('kkName' in data) || isOptStr(data.kkName, 200)) &&
+      isValidDocStatus(data.kkStatus) &&
+      (!('birthCertUrl' in data) || isOptStr(data.birthCertUrl, 1000)) &&
+      (!('birthCertName' in data) || isOptStr(data.birthCertName, 200)) &&
+      isValidDocStatus(data.birthCertStatus) &&
+      (!('fatherKtpUrl' in data) || isOptStr(data.fatherKtpUrl, 1000)) &&
+      (!('fatherKtpName' in data) || isOptStr(data.fatherKtpName, 200)) &&
+      isValidDocStatus(data.fatherKtpStatus) &&
+      (!('motherKtpUrl' in data) || isOptStr(data.motherKtpUrl, 1000)) &&
+      (!('motherKtpName' in data) || isOptStr(data.motherKtpName, 200)) &&
+      isValidDocStatus(data.motherKtpStatus) &&
+      (!('childPhotoUrl' in data) || isOptStr(data.childPhotoUrl, 1000)) &&
+      (!('childPhotoName' in data) || isOptStr(data.childPhotoName, 200)) &&
+      isValidDocStatus(data.childPhotoStatus) &&
+      (!('orphanCertUrl' in data) || isOptStr(data.orphanCertUrl, 1000)) &&
+      (!('orphanCertName' in data) || isOptStr(data.orphanCertName, 200)) &&
+      isValidDocStatus(data.orphanCertStatus) &&
+      (!('tahfidzCertUrl' in data) || isOptStr(data.tahfidzCertUrl, 1000)) &&
+      (!('tahfidzCertName' in data) || isOptStr(data.tahfidzCertName, 200)) &&
+      isValidDocStatus(data.tahfidzCertStatus) &&
+      (!('documentNote' in data) || isOptStr(data.documentNote, 600)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidPayments(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'program', 'paymentPlan', 'paymentMethod',
+        'paymentStatus', 'paymentAmount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'program', 'paymentPlan', 'paymentMethod', 'paymentStatus',
+        'paymentDate', 'paymentAmount', 'proofUrl', 'proofName', 'paymentNote',
+        'verifiedByUid', 'verifiedByEmail', 'treasurerNote', 'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      isValidStr(data.program, 2, 80) &&
+      data.paymentPlan in ['Lunas', 'Cicilan 3 tahap'] &&
+      data.paymentMethod in ['Transfer BRI', 'Pembayaran tunai kepada bendahara sekolah'] &&
+      data.paymentStatus in [
+        'Belum Bayar',
+        'Menunggu Verifikasi',
+        'Cicilan Tahap 1',
+        'Cicilan Tahap 2',
+        'Cicilan Tahap 3',
+        'Lunas',
+        'Ditolak'
+      ] &&
+      (!('paymentDate' in data) || isOptStr(data.paymentDate, 20)) &&
+      (data.paymentAmount is int || data.paymentAmount is float) && data.paymentAmount >= 0 && data.paymentAmount <= 100000000 &&
+      (!('proofUrl' in data) || isOptStr(data.proofUrl, 1000)) &&
+      (!('proofName' in data) || isOptStr(data.proofName, 200)) &&
+      (!('paymentNote' in data) || isOptStr(data.paymentNote, 500)) &&
+      (!('verifiedByUid' in data) || isOptStr(data.verifiedByUid, 128)) &&
+      (!('verifiedByEmail' in data) || isOptStr(data.verifiedByEmail, 160)) &&
+      (!('treasurerNote' in data) || isOptStr(data.treasurerNote, 600)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidConsents(data, regId) {
+      return data.keys().hasAll([
+        'registrationId', 'dataTruthAgreed', 'schoolRulesAgreed',
+        'administrationPaymentAgreed', 'healthUpdateAgreed', 'dataProcessingAgreed',
+        'internalDocumentationAgreed', 'publicMediaAgreed', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'dataTruthAgreed', 'schoolRulesAgreed',
+        'administrationPaymentAgreed', 'healthUpdateAgreed', 'dataProcessingAgreed',
+        'internalDocumentationAgreed', 'publicMediaAgreed', 'createdAt', 'updatedAt'
+      ]) &&
+      data.registrationId == regId &&
+      data.dataTruthAgreed is bool &&
+      data.schoolRulesAgreed is bool &&
+      data.administrationPaymentAgreed is bool &&
+      data.healthUpdateAgreed is bool &&
+      data.dataProcessingAgreed is bool &&
+      data.internalDocumentationAgreed is bool &&
+      data.publicMediaAgreed is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidVerificationLog(data, verId) {
+      return data.keys().hasAll([
+        'verificationId', 'registrationId', 'registrationNumber', 'actionType',
+        'previousValue', 'newValue', 'note', 'adminUid', 'adminEmail', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'verificationId', 'registrationId', 'registrationNumber', 'actionType',
+        'previousValue', 'newValue', 'note', 'adminUid', 'adminEmail', 'createdAt'
+      ]) &&
+      data.verificationId == verId &&
+      isValidId(data.registrationId) &&
+      isValidStr(data.registrationNumber, 8, 32) &&
+      data.actionType in [
+        'STATUS_CHANGE', 'PAYMENT_VERIFICATION', 'DOCUMENT_VERIFICATION',
+        'DATA_CORRECTION', 'NOTE_ADDED'
+      ] &&
+      isOptStr(data.previousValue, 500) &&
+      isOptStr(data.newValue, 500) &&
+      isOptStr(data.note, 1000) &&
+      data.adminUid == request.auth.uid &&
+      isValidStr(data.adminEmail, 5, 160) &&
+      data.createdAt == request.time;
+    }
+
+    // --- COLLECTION RULES ---
+
+    match /academic_years/{yearId} {
+      allow get: if isValidId(yearId);
+      allow list: if true;
+      allow create: if isValidId(yearId) && (
+        (isAdmin() && isValidAcademicYear(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time) ||
+        (yearId == '2027_2028' && !exists(/databases/$(database)/documents/academic_years/2027_2028) && isValidDefaultBootstrapYear(incoming()))
+      );
+      allow update: if isValidId(yearId) && isValidAcademicYear(incoming()) && (
+        (isAdmin() && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time) ||
+        (
+          existing().isOpen == true &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['currentSequence', 'lastRegistrationId', 'updatedAt']) &&
+          incoming().currentSequence == existing().currentSequence + 1 &&
+          isValidId(incoming().lastRegistrationId) &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          existsAfter(/databases/$(database)/documents/ppdb_registrations/$(incoming().lastRegistrationId)) &&
+          getAfter(/databases/$(database)/documents/ppdb_registrations/$(incoming().lastRegistrationId)).data.sequenceNumber == incoming().currentSequence &&
+          getAfter(/databases/$(database)/documents/ppdb_registrations/$(incoming().lastRegistrationId)).data.academicYearId == yearId
+        )
+      );
+      allow delete: if false;
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (
+        isAdmin() ||
+        (isVerifiedUser() && (
+          request.auth.uid == adminId ||
+          (request.auth.token.email is string && emailToKey(request.auth.token.email) == adminId)
+        ))
+      );
+      allow list: if isAdmin();
+      allow create: if isValidId(adminId) && isAdmin() && isValidAdminUser(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(adminId) && isAdmin() && isValidAdminUser(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(adminId) && isAdmin() && adminId != request.auth.uid &&
+        !(request.auth.token.email is string && adminId == emailToKey(request.auth.token.email));
+    }
+
+    match /ppdb_registrations/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidRegistration(incoming(), registrationId) &&
+        incoming().registrationStatus == 'Terdaftar' &&
+        incoming().paymentStatusSummary in ['Belum Bayar', 'Menunggu Verifikasi'] &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/academic_years/$(incoming().academicYearId)) &&
+        getAfter(/databases/$(database)/documents/academic_years/$(incoming().academicYearId)).data.lastRegistrationId == registrationId &&
+        getAfter(/databases/$(database)/documents/academic_years/$(incoming().academicYearId)).data.currentSequence == incoming().sequenceNumber;
+      allow update: if isValidId(registrationId) && isAdmin() && isValidRegistration(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().registrationNumber == existing().registrationNumber &&
+        incoming().sequenceNumber == existing().sequenceNumber &&
+        incoming().academicYearId == existing().academicYearId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_parents/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidParents(incoming(), registrationId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if isValidId(registrationId) && isAdmin() && isValidParents(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_guardians/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidGuardians(incoming(), registrationId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if isValidId(registrationId) && isAdmin() && isValidGuardians(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_health/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidHealth(incoming(), registrationId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if isValidId(registrationId) && isAdmin() && isValidHealth(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_documents/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidDocuments(incoming(), registrationId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if isValidId(registrationId) && isAdmin() && isValidDocuments(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_payments/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidPayments(incoming(), registrationId) &&
+        incoming().paymentStatus in ['Belum Bayar', 'Menunggu Verifikasi'] &&
+        (!('verifiedByUid' in incoming()) || incoming().verifiedByUid == '') &&
+        (!('verifiedByEmail' in incoming()) || incoming().verifiedByEmail == '') &&
+        (!('treasurerNote' in incoming()) || incoming().treasurerNote == '') &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if isValidId(registrationId) && isAdmin() && isValidPayments(incoming(), registrationId) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /ppdb_consents/{registrationId} {
+      allow get: if isValidId(registrationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(registrationId) &&
+        isValidConsents(incoming(), registrationId) &&
+        incoming().dataTruthAgreed == true &&
+        incoming().schoolRulesAgreed == true &&
+        incoming().administrationPaymentAgreed == true &&
+        incoming().healthUpdateAgreed == true &&
+        incoming().dataProcessingAgreed == true &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /ppdb_verifications/{verificationId} {
+      allow get: if isValidId(verificationId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(verificationId) && isAdmin() && isValidVerificationLog(incoming(), verificationId);
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

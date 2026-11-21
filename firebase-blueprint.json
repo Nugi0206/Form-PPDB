@@ -1,0 +1,459 @@
+{
+  "entities": {
+    "AcademicYear": {
+      "title": "AcademicYear",
+      "description": "Konfigurasi tahun pelajaran PPDB, penghitung nomor registrasi atomik, batas unggah dokumen, dan informasi kontak sekolah.",
+      "type": "object",
+      "properties": {
+        "yearLabel": { "type": "string", "minLength": 4, "maxLength": 20 },
+        "yearCode": { "type": "string", "minLength": 4, "maxLength": 4, "pattern": "^[0-9]{4}$" },
+        "isActive": { "type": "boolean" },
+        "isOpen": { "type": "boolean" },
+        "currentSequence": { "type": "integer" },
+        "lastRegistrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "maxFileSizeMb": { "type": "integer" },
+        "schoolPhone": { "type": "string", "maxLength": 30 },
+        "schoolWhatsapp": { "type": "string", "maxLength": 30 },
+        "schoolEmail": { "type": "string", "maxLength": 120 },
+        "schoolAddress": { "type": "string", "maxLength": 300 },
+        "announcementNote": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "yearLabel",
+        "yearCode",
+        "isActive",
+        "isOpen",
+        "currentSequence",
+        "maxFileSizeMb",
+        "schoolPhone",
+        "schoolWhatsapp",
+        "schoolEmail",
+        "schoolAddress",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Daftar pengguna admin berwenang yang diizinkan mengakses dashboard PPDB.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 160 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "bendahara"] },
+        "active": { "type": "boolean" },
+        "addedBy": { "type": "string", "maxLength": 160 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role", "active", "createdAt", "updatedAt"]
+    },
+    "PpdbRegistration": {
+      "title": "PpdbRegistration",
+      "description": "Data utama pendaftaran dan identitas calon peserta didik RA Darusyifa Arjawinangun.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "registrationNumber": { "type": "string", "maxLength": 32, "pattern": "^PPDB-[0-9]{4}-[0-9]{4,}$" },
+        "sequenceNumber": { "type": "integer" },
+        "academicYearId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "academicYearLabel": { "type": "string", "maxLength": 20 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "nickname": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "nik": { "type": "string", "minLength": 16, "maxLength": 16, "pattern": "^[0-9]{16}$" },
+        "kkNumber": { "type": "string", "minLength": 16, "maxLength": 16, "pattern": "^[0-9]{16}$" },
+        "birthPlace": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "birthDate": { "type": "string", "maxLength": 20, "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "ageYears": { "type": "integer" },
+        "ageMonths": { "type": "integer" },
+        "religion": { "type": "string", "minLength": 2, "maxLength": 30 },
+        "childOrder": { "type": "integer" },
+        "heightCm": { "type": "number" },
+        "weightKg": { "type": "number" },
+        "address": { "type": "string", "minLength": 5, "maxLength": 300 },
+        "village": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "district": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "city": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "province": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "previousSchool": { "type": "string", "maxLength": 120 },
+        "educationDuration": { "type": "string", "enum": ["1 tahun", "2 tahun"] },
+        "program": {
+          "type": "string",
+          "enum": [
+            "Reguler",
+            "Beasiswa Anak Yatim Piatu",
+            "Beasiswa Anak Yatim",
+            "Program Alumni",
+            "Beasiswa Tahfidz Al-Qur'an"
+          ]
+        },
+        "scholarshipReason": { "type": "string", "maxLength": 1000 },
+        "scholarshipVerificationAgreed": { "type": "boolean" },
+        "referralSource": { "type": "string", "maxLength": 120 },
+        "reasonChoosingSchool": { "type": "string", "maxLength": 600 },
+        "childInterests": { "type": "string", "maxLength": 400 },
+        "parentExpectations": { "type": "string", "maxLength": 600 },
+        "primaryParentName": { "type": "string", "maxLength": 120 },
+        "primaryWhatsapp": { "type": "string", "maxLength": 30 },
+        "registrationStatus": {
+          "type": "string",
+          "enum": [
+            "Terdaftar",
+            "Menunggu Verifikasi",
+            "Perlu Perbaikan",
+            "Menunggu Pembayaran",
+            "Menunggu Keputusan",
+            "Diterima",
+            "Ditolak",
+            "Mengundurkan Diri"
+          ]
+        },
+        "paymentStatusSummary": {
+          "type": "string",
+          "enum": [
+            "Belum Bayar",
+            "Menunggu Verifikasi",
+            "Cicilan Tahap 1",
+            "Cicilan Tahap 2",
+            "Cicilan Tahap 3",
+            "Lunas",
+            "Ditolak"
+          ]
+        },
+        "verificationNote": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "registrationNumber",
+        "sequenceNumber",
+        "academicYearId",
+        "academicYearLabel",
+        "fullName",
+        "nickname",
+        "gender",
+        "nik",
+        "kkNumber",
+        "birthPlace",
+        "birthDate",
+        "ageYears",
+        "ageMonths",
+        "religion",
+        "childOrder",
+        "heightCm",
+        "weightKg",
+        "address",
+        "village",
+        "district",
+        "city",
+        "province",
+        "educationDuration",
+        "program",
+        "primaryParentName",
+        "primaryWhatsapp",
+        "registrationStatus",
+        "paymentStatusSummary",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbParents": {
+      "title": "PpdbParents",
+      "description": "Data lengkap ayah dan ibu calon peserta didik.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fatherName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "fatherStatus": { "type": "string", "enum": ["Masih Hidup", "Meninggal Dunia"] },
+        "fatherNik": { "type": "string", "maxLength": 16 },
+        "fatherBirthPlaceDate": { "type": "string", "maxLength": 100 },
+        "fatherEducation": { "type": "string", "maxLength": 60 },
+        "fatherOccupation": { "type": "string", "maxLength": 80 },
+        "fatherWhatsapp": { "type": "string", "maxLength": 30 },
+        "motherName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "motherStatus": { "type": "string", "enum": ["Masih Hidup", "Meninggal Dunia"] },
+        "motherNik": { "type": "string", "maxLength": 16 },
+        "motherBirthPlaceDate": { "type": "string", "maxLength": 100 },
+        "motherEducation": { "type": "string", "maxLength": 60 },
+        "motherOccupation": { "type": "string", "maxLength": 80 },
+        "motherWhatsapp": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "fatherName",
+        "fatherStatus",
+        "motherName",
+        "motherStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbGuardians": {
+      "title": "PpdbGuardians",
+      "description": "Data wali dan kontak darurat calon peserta didik.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "livesWith": { "type": "string", "enum": ["Ayah dan Ibu", "Ayah", "Ibu", "Wali", "Lainnya"] },
+        "guardianName": { "type": "string", "maxLength": 120 },
+        "guardianRelation": { "type": "string", "maxLength": 60 },
+        "guardianWhatsapp": { "type": "string", "maxLength": 30 },
+        "guardianAddress": { "type": "string", "maxLength": 300 },
+        "emergencyContactName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "emergencyContactPhone": { "type": "string", "minLength": 8, "maxLength": 30 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "livesWith",
+        "emergencyContactName",
+        "emergencyContactPhone",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbHealth": {
+      "title": "PpdbHealth",
+      "description": "Riwayat kesehatan dan perkembangan kemandirian anak.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "hasDiseaseHistory": { "type": "boolean" },
+        "diseaseHistoryDetail": { "type": "string", "maxLength": 400 },
+        "hasAllergy": { "type": "boolean" },
+        "allergyDetail": { "type": "string", "maxLength": 400 },
+        "takesRoutineMedication": { "type": "boolean" },
+        "routineMedicationDetail": { "type": "string", "maxLength": 400 },
+        "hasSpecialHealthCondition": { "type": "boolean" },
+        "specialHealthConditionDetail": { "type": "string", "maxLength": 400 },
+        "hasSpecialNeeds": { "type": "boolean" },
+        "specialNeedsDetail": { "type": "string", "maxLength": 400 },
+        "communicationAbility": { "type": "string", "maxLength": 200 },
+        "eatingIndependence": { "type": "string", "maxLength": 200 },
+        "toiletIndependence": { "type": "string", "maxLength": 200 },
+        "socializationAbility": { "type": "string", "maxLength": 200 },
+        "characterAndDevelopmentNote": { "type": "string", "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "hasDiseaseHistory",
+        "hasAllergy",
+        "takesRoutineMedication",
+        "hasSpecialHealthCondition",
+        "hasSpecialNeeds",
+        "communicationAbility",
+        "eatingIndependence",
+        "toiletIndependence",
+        "socializationAbility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbDocuments": {
+      "title": "PpdbDocuments",
+      "description": "Metadata berkas persyaratan PPDB yang diunggah ke Firebase Storage.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "kkUrl": { "type": "string", "maxLength": 1000 },
+        "kkName": { "type": "string", "maxLength": 200 },
+        "kkStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "birthCertUrl": { "type": "string", "maxLength": 1000 },
+        "birthCertName": { "type": "string", "maxLength": 200 },
+        "birthCertStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "fatherKtpUrl": { "type": "string", "maxLength": 1000 },
+        "fatherKtpName": { "type": "string", "maxLength": 200 },
+        "fatherKtpStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "motherKtpUrl": { "type": "string", "maxLength": 1000 },
+        "motherKtpName": { "type": "string", "maxLength": 200 },
+        "motherKtpStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "childPhotoUrl": { "type": "string", "maxLength": 1000 },
+        "childPhotoName": { "type": "string", "maxLength": 200 },
+        "childPhotoStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "orphanCertUrl": { "type": "string", "maxLength": 1000 },
+        "orphanCertName": { "type": "string", "maxLength": 200 },
+        "orphanCertStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "tahfidzCertUrl": { "type": "string", "maxLength": 1000 },
+        "tahfidzCertName": { "type": "string", "maxLength": 200 },
+        "tahfidzCertStatus": { "type": "string", "enum": ["Belum Diunggah", "Menunggu Verifikasi", "Valid", "Perlu Perbaikan"] },
+        "documentNote": { "type": "string", "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "kkStatus",
+        "birthCertStatus",
+        "fatherKtpStatus",
+        "motherKtpStatus",
+        "childPhotoStatus",
+        "orphanCertStatus",
+        "tahfidzCertStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbPayments": {
+      "title": "PpdbPayments",
+      "description": "Data rencana pembayaran, bukti transfer, dan verifikasi bendahara yang berdiri sendiri dari status penerimaan.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "program": { "type": "string", "maxLength": 80 },
+        "paymentPlan": { "type": "string", "enum": ["Lunas", "Cicilan 3 tahap"] },
+        "paymentMethod": { "type": "string", "enum": ["Transfer BRI", "Pembayaran tunai kepada bendahara sekolah"] },
+        "paymentStatus": {
+          "type": "string",
+          "enum": [
+            "Belum Bayar",
+            "Menunggu Verifikasi",
+            "Cicilan Tahap 1",
+            "Cicilan Tahap 2",
+            "Cicilan Tahap 3",
+            "Lunas",
+            "Ditolak"
+          ]
+        },
+        "paymentDate": { "type": "string", "maxLength": 20 },
+        "paymentAmount": { "type": "number" },
+        "proofUrl": { "type": "string", "maxLength": 1000 },
+        "proofName": { "type": "string", "maxLength": 200 },
+        "paymentNote": { "type": "string", "maxLength": 500 },
+        "verifiedByUid": { "type": "string", "maxLength": 128 },
+        "verifiedByEmail": { "type": "string", "maxLength": 160 },
+        "treasurerNote": { "type": "string", "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "program",
+        "paymentPlan",
+        "paymentMethod",
+        "paymentStatus",
+        "paymentAmount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbConsents": {
+      "title": "PpdbConsents",
+      "description": "Pernyataan dan persetujuan orang tua termasuk pilihan terpisah dokumentasi internal dan publikasi media.",
+      "type": "object",
+      "properties": {
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dataTruthAgreed": { "type": "boolean" },
+        "schoolRulesAgreed": { "type": "boolean" },
+        "administrationPaymentAgreed": { "type": "boolean" },
+        "healthUpdateAgreed": { "type": "boolean" },
+        "dataProcessingAgreed": { "type": "boolean" },
+        "internalDocumentationAgreed": { "type": "boolean" },
+        "publicMediaAgreed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "registrationId",
+        "dataTruthAgreed",
+        "schoolRulesAgreed",
+        "administrationPaymentAgreed",
+        "healthUpdateAgreed",
+        "dataProcessingAgreed",
+        "internalDocumentationAgreed",
+        "publicMediaAgreed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PpdbVerificationLog": {
+      "title": "PpdbVerificationLog",
+      "description": "Catatan audit aktivitas admin untuk perubahan status, verifikasi pembayaran, verifikasi berkas, dan perbaikan data.",
+      "type": "object",
+      "properties": {
+        "verificationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "registrationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "registrationNumber": { "type": "string", "maxLength": 32 },
+        "actionType": {
+          "type": "string",
+          "enum": [
+            "STATUS_CHANGE",
+            "PAYMENT_VERIFICATION",
+            "DOCUMENT_VERIFICATION",
+            "DATA_CORRECTION",
+            "NOTE_ADDED"
+          ]
+        },
+        "previousValue": { "type": "string", "maxLength": 500 },
+        "newValue": { "type": "string", "maxLength": 500 },
+        "note": { "type": "string", "maxLength": 1000 },
+        "adminUid": { "type": "string", "maxLength": 128 },
+        "adminEmail": { "type": "string", "maxLength": 160 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "verificationId",
+        "registrationId",
+        "registrationNumber",
+        "actionType",
+        "previousValue",
+        "newValue",
+        "note",
+        "adminUid",
+        "adminEmail",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/academic_years/{yearId}": {
+      "schema": { "$ref": "#/entities/AcademicYear" },
+      "description": "Pengaturan tahun pelajaran aktif, penghitung registrasi atomik, batas ukuran unggah file, dan kontak sekolah."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Daftar administrator dan bendahara yang memiliki hak akses ke /ppdb-admin."
+    },
+    "/ppdb_registrations/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbRegistration" },
+      "description": "Data inti pendaftar PPDB dan identitas calon peserta didik."
+    },
+    "/ppdb_parents/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbParents" },
+      "description": "Data ayah dan ibu yang terhubung dengan ID pendaftaran."
+    },
+    "/ppdb_guardians/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbGuardians" },
+      "description": "Data wali dan kontak darurat yang terhubung dengan ID pendaftaran."
+    },
+    "/ppdb_health/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbHealth" },
+      "description": "Riwayat kesehatan dan kemandirian anak yang terhubung dengan ID pendaftaran."
+    },
+    "/ppdb_documents/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbDocuments" },
+      "description": "URL dan status verifikasi berkas persyaratan pendaftaran."
+    },
+    "/ppdb_payments/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbPayments" },
+      "description": "Informasi pembayaran dan status verifikasi bendahara."
+    },
+    "/ppdb_consents/{registrationId}": {
+      "schema": { "$ref": "#/entities/PpdbConsents" },
+      "description": "Persetujuan pernyataan orang tua dan publikasi dokumentasi."
+    },
+    "/ppdb_verifications/{verificationId}": {
+      "schema": { "$ref": "#/entities/PpdbVerificationLog" },
+      "description": "Jejak audit verifikasi dan perubahan data oleh admin."
+    }
+  }
+}

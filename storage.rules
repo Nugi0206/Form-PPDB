@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Dokumen pendaftaran PPDB: orang tua dapat mengunggah saat pendaftaran,
+    // hanya admin terverifikasi yang dapat membaca atau menghapus.
+    match /ppdb_documents/{registrationId}/{docFile} {
+      allow create: if registrationId.matches('^[a-zA-Z0-9_\\-]+$')
+        && docFile.matches('^[a-zA-Z0-9_.\\-]+$')
+        && request.resource.size > 0
+        && request.resource.size <= 15 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/jpeg') ||
+          request.resource.contentType.matches('image/png') ||
+          request.resource.contentType == 'application/pdf'
+        );
+
+      allow read, delete: if request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email == 'muhamadnugiandri@gmail.com' ||
+          firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+        );
+    }
+  }
+}
