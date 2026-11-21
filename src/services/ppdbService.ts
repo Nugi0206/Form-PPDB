@@ -1033,3 +1033,28 @@ export async function deleteAdminUser(adminId: string): Promise<void> {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
+
+export async function deleteRegistrationBundle(registrationId: string): Promise<void> {
+  const path = `ppdb_registrations/${registrationId}`;
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'ppdb_registrations', registrationId));
+    batch.delete(doc(db, 'ppdb_parents', registrationId));
+    batch.delete(doc(db, 'ppdb_guardians', registrationId));
+    batch.delete(doc(db, 'ppdb_health', registrationId));
+    batch.delete(doc(db, 'ppdb_documents', registrationId));
+    batch.delete(doc(db, 'ppdb_payments', registrationId));
+    batch.delete(doc(db, 'ppdb_consents', registrationId));
+
+    const verSnap = await getDocs(
+      query(collection(db, 'ppdb_verifications'), where('registrationId', '==', registrationId))
+    );
+    verSnap.forEach((vDoc) => {
+      batch.delete(vDoc.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}

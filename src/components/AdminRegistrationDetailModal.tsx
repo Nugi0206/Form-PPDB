@@ -8,6 +8,7 @@ import {
   Loader2,
   Printer,
   Save,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -20,6 +21,7 @@ import {
 } from '../lib/utils';
 import {
   addAdminNoteOnly,
+  deleteRegistrationBundle,
   saveDataCorrectionByAdmin,
   updateRegistrationStatus,
   verifyDocumentsByAdmin,
@@ -336,6 +338,25 @@ export function AdminRegistrationDetailModal({
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Bukti Penerimaan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Hapus permanen pendaftaran ${registration.fullName} (${registration.registrationNumber})?`)) return;
+                try {
+                  await deleteRegistrationBundle(registration.registrationId);
+                  onClose();
+                  await onUpdated();
+                } catch (err) {
+                  setFeedback({ type: 'error', text: parseReadableFirestoreError(err) });
+                }
+              }}
+              title="Hapus pendaftaran"
+              className="p-2 text-red-600 hover:text-white hover:bg-red-700 rounded-lg cursor-pointer transition-colors"
+              aria-label="Hapus pendaftaran"
+            >
+              <Trash2 className="w-5 h-5" />
             </button>
 
             <button
@@ -867,6 +888,63 @@ export function AdminRegistrationDetailModal({
                     Status pembayaran berdiri sendiri dan tidak otomatis mengubah status penerimaan siswa.
                   </p>
                 </div>
+
+                {/* Kalkulator Sisa Pembayaran */}
+                {(() => {
+                  const standardBill = 995000;
+                  const currentPaid = Number(paymentAmount) || 0;
+                  const remaining = Math.max(0, standardBill - currentPaid);
+                  return (
+                    <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70 space-y-2">
+                      <div className="flex justify-between items-center text-xs sm:text-sm">
+                        <span className="text-slate-600 font-medium">Standar Total Tagihan PPDB:</span>
+                        <span className="font-mono font-bold text-slate-900">{formatRupiah(standardBill)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs sm:text-sm">
+                        <span className="text-slate-600 font-medium">Total Terverifikasi (Cicilan):</span>
+                        <span className="font-mono font-bold text-emerald-800">{formatRupiah(currentPaid)}</span>
+                      </div>
+                      <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-sm sm:text-base">
+                        <span className="font-bold text-slate-900">Sisa Pembayaran:</span>
+                        <span className={`font-mono font-bold ${remaining === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {formatRupiah(remaining)} {remaining === 0 ? '(LUNAS)' : ''}
+                        </span>
+                      </div>
+                      <div className="pt-1 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentAmount('500000');
+                            setPaymentStatus('Cicilan Tahap 1');
+                          }}
+                          className="px-2.5 py-1 text-xs font-semibold bg-white border border-emerald-300 hover:bg-emerald-100 rounded-lg text-emerald-900 cursor-pointer"
+                        >
+                          Cicilan 1 (Rp 500.000)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentAmount('750000');
+                            setPaymentStatus('Cicilan Tahap 2');
+                          }}
+                          className="px-2.5 py-1 text-xs font-semibold bg-white border border-emerald-300 hover:bg-emerald-100 rounded-lg text-emerald-900 cursor-pointer"
+                        >
+                          Cicilan 2 (Rp 750.000)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentAmount('995000');
+                            setPaymentStatus('Lunas');
+                          }}
+                          className="px-2.5 py-1 text-xs font-semibold bg-emerald-800 text-white hover:bg-emerald-900 rounded-lg cursor-pointer"
+                        >
+                          Lunas (Rp 995.000)
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

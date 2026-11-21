@@ -26,6 +26,7 @@ import {
 import { exportPpdbWorkbook } from '../services/excelExportService';
 import {
   deleteAdminUser,
+  deleteRegistrationBundle,
   fetchAllAdmins,
   fetchAllRegistrations,
   fetchBundlesForExport,
@@ -221,6 +222,22 @@ export function AdminDashboard({
     if (selectedBundle) {
       const refreshed = await fetchRegistrationBundle(selectedBundle.registration.registrationId);
       if (refreshed) setSelectedBundle(refreshed);
+    }
+  };
+
+  const handleDeleteRegistration = async (item: PpdbRegistrationRecord) => {
+    if (
+      !window.confirm(
+        `Hapus permanen pendaftaran ${item.fullName} (${item.registrationNumber})? Tindakan ini tidak dapat dibatalkan.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteRegistrationBundle(item.registrationId);
+      await loadData();
+    } catch (err) {
+      setError(parseReadableFirestoreError(err));
     }
   };
 
@@ -677,7 +694,7 @@ export function AdminDashboard({
                                 {item.paymentStatusSummary}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <td className="py-3 px-4 text-right whitespace-nowrap space-x-2">
                               <button
                                 type="button"
                                 onClick={() => void handleOpenDetail(item.registrationId)}
@@ -690,6 +707,14 @@ export function AdminDashboard({
                                   <Eye className="w-3.5 h-3.5" />
                                 )}
                                 <span>Detail</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDeleteRegistration(item)}
+                                title="Hapus pendaftaran"
+                                className="inline-flex items-center p-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </td>
                           </tr>

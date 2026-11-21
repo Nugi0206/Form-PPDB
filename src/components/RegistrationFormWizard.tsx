@@ -242,8 +242,10 @@ export function RegistrationFormWizard({
     }
 
     if (targetStep === 5) {
-      if (!files.kk) newErrors.file_kk = 'Kartu Keluarga (KK) wajib diunggah.';
-      if (!files.birthCert) newErrors.file_birthCert = 'Akta Kelahiran anak wajib diunggah.';
+      if (!draft.docKkReady)
+        newErrors.docKkReady = 'Konfirmasi penyiapan Kartu Keluarga (KK) wajib dicentang.';
+      if (!draft.docBirthCertReady)
+        newErrors.docBirthCertReady = 'Konfirmasi penyiapan Akta Kelahiran anak wajib dicentang.';
     }
 
     if (targetStep === 6) {
@@ -1257,69 +1259,104 @@ export function RegistrationFormWizard({
             </div>
           )}
 
-          {/* BAGIAN 5: DOKUMEN PERSYARATAN */}
+          {/* BAGIAN 5: KONFIRMASI DOKUMEN & DAFTAR ULANG */}
           {step === 5 && (
             <div className="space-y-6">
               <div className="border-b border-slate-200 pb-4">
                 <h2 className="font-display text-xl font-bold text-slate-900">
-                  Bagian 5 — Dokumen Persyaratan
+                  Bagian 5 — Konfirmasi Dokumen Persyaratan
                 </h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  Unggah dokumen berformat JPG, JPEG, PNG, atau PDF dengan ukuran maksimal{' '}
-                  <strong>{academicYear.maxFileSizeMb} MB</strong> per file.
+                  Untuk mempercepat proses pendaftaran online, dokumen fisik tidak perlu diunggah. Cukup centang konfirmasi penyiapan berkas di bawah ini.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <DocumentUploadCard
-                  label="Kartu Keluarga (KK)"
-                  required
-                  file={files.kk}
-                  error={errors.file_kk}
-                  onSelect={(f) => handleFileChange('kk', f)}
-                />
-                <DocumentUploadCard
-                  label="Akta Kelahiran Anak"
-                  required
-                  file={files.birthCert}
-                  error={errors.file_birthCert}
-                  onSelect={(f) => handleFileChange('birthCert', f)}
-                />
-                <DocumentUploadCard
-                  label="KTP Ayah"
-                  hint="Opsional — unggah jika tersedia"
-                  file={files.fatherKtp}
-                  error={errors.file_fatherKtp}
-                  onSelect={(f) => handleFileChange('fatherKtp', f)}
-                />
-                <DocumentUploadCard
-                  label="KTP Ibu"
-                  hint="Opsional — unggah jika tersedia"
-                  file={files.motherKtp}
-                  error={errors.file_motherKtp}
-                  onSelect={(f) => handleFileChange('motherKtp', f)}
-                />
-                <DocumentUploadCard
-                  label="Foto Calon Peserta Didik"
-                  hint="Pas foto anak terbaru"
-                  file={files.childPhoto}
-                  error={errors.file_childPhoto}
-                  onSelect={(f) => handleFileChange('childPhoto', f)}
-                />
-                <DocumentUploadCard
-                  label="Surat Keterangan Yatim / Piatu"
-                  hint="Diperlukan apabila memilih Program Beasiswa Anak Yatim atau Beasiswa Anak Yatim Piatu"
-                  file={files.orphanCert}
-                  error={errors.file_orphanCert}
-                  onSelect={(f) => handleFileChange('orphanCert', f)}
-                />
-                <DocumentUploadCard
-                  label="Sertifikat Tahfidz Al-Qur'an"
-                  hint="Diperlukan apabila memilih Program Beasiswa Tahfidz Al-Qur'an"
-                  file={files.tahfidzCert}
-                  error={errors.file_tahfidzCert}
-                  onSelect={(f) => handleFileChange('tahfidzCert', f)}
-                />
+              <div className="p-4 sm:p-5 rounded-xl bg-amber-50 border border-amber-300 text-xs sm:text-sm text-amber-950 leading-relaxed space-y-2">
+                <p className="font-bold flex items-center gap-1.5">
+                  <span>📌</span>
+                  <span>Catatan Penting Daftar Ulang & Penyerahan Berkas:</span>
+                </p>
+                <p>
+                  Seluruh dokumen fisik persyaratan (Kartu Keluarga, Akta Kelahiran, KTP Orang Tua, Pas Foto, serta Surat Keterangan Yatim / Sertifikat Tahfidz bagi jalur beasiswa atau formulir print-out bagi program selain Reguler) <strong>wajib dibawa lengkap saat kegiatan daftar ulang / penyerahan berkas fisik</strong> di RA Darusyifa Arjawinangun.
+                </p>
+              </div>
+
+              <div className="space-y-3.5">
+                <div>
+                  <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draft.docKkReady}
+                      onChange={(e) => updateField('docKkReady', e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0"
+                    />
+                    <span className="text-sm text-slate-800 leading-relaxed">
+                      Saya menyatakan bahwa <strong>Kartu Keluarga (KK)</strong> asli & fotokopi telah disiapkan dan akan dibawa saat daftar ulang ke sekolah. <span className="text-red-600">*</span>
+                    </span>
+                  </label>
+                  {errors.docKkReady && (
+                    <p className="mt-1 text-xs text-red-600">{errors.docKkReady}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draft.docBirthCertReady}
+                      onChange={(e) => updateField('docBirthCertReady', e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0"
+                    />
+                    <span className="text-sm text-slate-800 leading-relaxed">
+                      Saya menyatakan bahwa <strong>Akta Kelahiran Anak</strong> asli & fotokopi telah disiapkan dan akan dibawa saat daftar ulang ke sekolah. <span className="text-red-600">*</span>
+                    </span>
+                  </label>
+                  {errors.docBirthCertReady && (
+                    <p className="mt-1 text-xs text-red-600">{errors.docBirthCertReady}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draft.docParentKtpReady}
+                      onChange={(e) => updateField('docParentKtpReady', e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0"
+                    />
+                    <span className="text-sm text-slate-800 leading-relaxed">
+                      Saya menyatakan bahwa <strong>KTP Ayah & Ibu / Wali</strong> telah disiapkan dan akan dibawa saat daftar ulang ke sekolah.
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draft.docPhotoReady}
+                      onChange={(e) => updateField('docPhotoReady', e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0"
+                    />
+                    <span className="text-sm text-slate-800 leading-relaxed">
+                      Saya menyatakan bahwa <strong>Pas Foto Calon Peserta Didik</strong> telah disiapkan dan akan dibawa saat daftar ulang ke sekolah.
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draft.docSpecialDocReady}
+                      onChange={(e) => updateField('docSpecialDocReady', e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0"
+                    />
+                    <span className="text-sm text-slate-800 leading-relaxed">
+                      Saya menyatakan bahwa <strong>Dokumen Pendukung Khusus</strong> (Surat Keterangan Yatim/Piatu, Sertifikat Tahfidz, atau Form Program Alumni) telah disiapkan (jika mendaftar jalur khusus).
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
           )}

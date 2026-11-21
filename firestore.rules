@@ -475,7 +475,7 @@ service cloud.firestore {
         incoming().academicYearId == existing().academicYearId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_parents/{registrationId} {
@@ -490,7 +490,7 @@ service cloud.firestore {
         incoming().registrationId == existing().registrationId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_guardians/{registrationId} {
@@ -505,7 +505,7 @@ service cloud.firestore {
         incoming().registrationId == existing().registrationId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_health/{registrationId} {
@@ -520,7 +520,7 @@ service cloud.firestore {
         incoming().registrationId == existing().registrationId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_documents/{registrationId} {
@@ -535,7 +535,7 @@ service cloud.firestore {
         incoming().registrationId == existing().registrationId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_payments/{registrationId} {
@@ -554,7 +554,7 @@ service cloud.firestore {
         incoming().registrationId == existing().registrationId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_consents/{registrationId} {
@@ -571,7 +571,7 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         existsAfter(/databases/$(database)/documents/ppdb_registrations/$(registrationId));
       allow update: if false;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /ppdb_verifications/{verificationId} {
@@ -579,7 +579,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isValidId(verificationId) && isAdmin() && isValidVerificationLog(incoming(), verificationId);
       allow update: if false;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
   }
 }

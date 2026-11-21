@@ -46,6 +46,9 @@ export function PublicLandingPage({
                 <span>Penerimaan Peserta Didik Baru • TP {academicYear.yearLabel}</span>
               </div>
 
+              <p className="text-emerald-800 font-semibold text-base sm:text-lg mb-2">
+                Assalamu’alaikum Warahmatullahi Wabarakatuh 🙏
+              </p>
               <h1
                 className="font-display font-bold tracking-tight text-slate-900 leading-[1.15] mb-4"
                 style={{ fontSize: 'clamp(2rem, 3.6vw, 3.2rem)', textWrap: 'balance' }}

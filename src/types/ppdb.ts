@@ -465,6 +465,12 @@ export interface FormDraftState {
   toiletIndependence: string;
   socializationAbility: string;
   characterAndDevelopmentNote: string;
+  // Bagian 5: Dokumen Checklists
+  docKkReady: boolean;
+  docBirthCertReady: boolean;
+  docParentKtpReady: boolean;
+  docPhotoReady: boolean;
+  docSpecialDocReady: boolean;
   // Bagian 6
   program: EducationProgram;
   scholarshipReason: string;
