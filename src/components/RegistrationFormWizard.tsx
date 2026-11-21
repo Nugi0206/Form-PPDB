@@ -98,6 +98,14 @@ export function RegistrationFormWizard({
     return () => clearTimeout(t);
   }, [toastMessage]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // Abaikan error localStorage
+    }
+  }, [draft]);
+
   const updateField = <K extends keyof FormDraftState>(key: K, value: FormDraftState[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) {
@@ -452,7 +460,7 @@ export function RegistrationFormWizard({
                 <p className="mt-1">{submitError}</p>
               ) : (
                 <p className="mt-1">
-                  Terdapat {Object.keys(errors).length} kolom yang wajib dilengkapi atau diperbaiki pada bagian ini.
+                  Data Anda tersimpan aman dan tidak hilang. Terdapat {Object.keys(errors).length} kolom yang wajib dilengkapi atau diperbaiki pada bagian ini.
                 </p>
               )}
             </div>

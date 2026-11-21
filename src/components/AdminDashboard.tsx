@@ -343,11 +343,12 @@ export function AdminDashboard({
       {/* Sidebar Navigasi */}
       <aside className="lg:w-64 bg-emerald-950 text-white shrink-0 flex flex-col justify-between no-print">
         <div>
-          <div className="p-5 border-b border-emerald-900 flex items-center gap-3">
-            <BrandMark size="sm" />
+          <div className="p-5 border-b border-emerald-900 flex flex-col items-center text-center gap-2.5">
+            <BrandMark size="lg" />
             <div className="min-w-0">
-              <p className="font-display font-bold text-sm truncate">{SCHOOL_INFO.shortName}</p>
-              <p className="text-xs text-emerald-300 truncate">Dashboard Admin PPDB</p>
+              <p className="text-xs font-semibold text-amber-300">Assalamu’alaikum Wr. Wb. ✨</p>
+              <p className="font-display font-bold text-sm mt-1 truncate">{SCHOOL_INFO.name}</p>
+              <p className="text-xs text-emerald-300 truncate">Dashboard Panitia & Admin PPDB</p>
             </div>
           </div>
 
