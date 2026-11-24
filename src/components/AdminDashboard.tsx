@@ -1,6 +1,10 @@
 import { User } from 'firebase/auth';
 import {
+  Award,
   Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
   Download,
   ExternalLink,
   Eye,
@@ -8,13 +12,16 @@ import {
   FilterX,
   Loader2,
   LogOut,
+  MessageSquare,
   Plus,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   Trash2,
+  TrendingUp,
   Users,
+  XCircle,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -228,16 +235,20 @@ export function AdminDashboard({
   const handleDeleteRegistration = async (item: PpdbRegistrationRecord) => {
     if (
       !window.confirm(
-        `Hapus permanen pendaftaran ${item.fullName} (${item.registrationNumber})? Tindakan ini tidak dapat dibatalkan.`
+        `Hapus permanen pendaftaran ${item.fullName} (${item.registrationNumber})? Data akan langsung terhapus dari sistem.`
       )
     ) {
       return;
     }
     try {
       await deleteRegistrationBundle(item.registrationId);
-      await loadData();
+      setRegistrations((prev) => prev.filter((r) => r.registrationId !== item.registrationId));
+      if (selectedBundle?.registration.registrationId === item.registrationId) {
+        setSelectedBundle(null);
+      }
     } catch (err) {
       setError(parseReadableFirestoreError(err));
+      await loadData();
     }
   };
 
@@ -396,6 +407,16 @@ export function AdminDashboard({
           </nav>
         </div>
 
+        {/* Dekorasi Siluet Masjid */}
+        <div className="relative h-28 overflow-hidden opacity-30 pointer-events-none my-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-900/40 to-transparent" />
+          <svg className="absolute bottom-0 w-full text-emerald-700 fill-current" viewBox="0 0 500 150">
+            <path d="M0,150 L500,150 L500,120 Q450,110 400,120 Q350,90 300,120 Q250,60 200,120 Q150,100 100,120 Q50,110 0,120 Z" />
+            <path d="M220,120 L220,70 Q250,40 280,70 L280,120 Z" />
+            <circle cx="250" cy="50" r="4" fill="currentColor" />
+          </svg>
+        </div>
+
         <div className="hidden lg:block p-4 border-t border-emerald-900 space-y-3 text-xs">
           <div>
             <p className="text-emerald-300">Masuk sebagai</p>
@@ -490,23 +511,14 @@ export function AdminDashboard({
           {/* BAGIAN 1: DATA PENDAFTAR */}
           {section === 'pendaftar' && (
             <>
-              {/* 7 Kartu Statistik */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3.5">
-                <StatCard label="Total Pendaftar" value={stats.total} />
-                <StatCard label="Pendaftar Baru" value={stats.baru} tone="emerald" />
-                <StatCard
-                  label="Menunggu Verifikasi"
-                  value={stats.menungguVerifikasi}
-                  tone="amber"
-                />
-                <StatCard
-                  label="Menunggu Pembayaran"
-                  value={stats.menungguPembayaran}
-                  tone="amber"
-                />
-                <StatCard label="Diterima" value={stats.diterima} tone="emerald" />
-                <StatCard label="Ditolak" value={stats.ditolak} tone="red" />
-                <StatCard label="Pengajuan Beasiswa" value={stats.beasiswa} />
+              {/* 6 Kartu Statistik */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
+                <StatCard label="Total Pendaftar" value={stats.total} icon={Users} tone="emerald" />
+                <StatCard label="Pendaftar Baru" value={stats.baru} icon={CheckCircle2} tone="blue" />
+                <StatCard label="Menunggu Verifikasi" value={stats.menungguVerifikasi} icon={Clock} tone="amber" />
+                <StatCard label="Menunggu Pembayaran" value={stats.menungguPembayaran} icon={CreditCard} tone="purple" />
+                <StatCard label="Diterima" value={stats.diterima} icon={CheckCircle2} tone="emerald" />
+                <StatCard label="Ditolak" value={stats.ditolak} icon={XCircle} tone="red" />
               </div>
 
               {/* Filter & Pencarian */}
@@ -659,60 +671,57 @@ export function AdminDashboard({
                             key={item.registrationId}
                             className="hover:bg-emerald-50/30 transition-colors"
                           >
-                            <td className="py-3 px-4 font-mono font-semibold text-emerald-900 whitespace-nowrap tabular-nums">
-                              {item.registrationNumber}
+                            <td className="py-3 px-4 font-mono font-bold text-emerald-900 whitespace-nowrap tabular-nums">
+                              <span className="inline-block px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                {item.registrationNumber}
+                              </span>
                             </td>
                             <td className="py-3 px-4 text-slate-600 whitespace-nowrap tabular-nums">
                               {formatIndonesianDate(item.createdAt, true)}
                             </td>
-                            <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
+                            <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
                               {item.fullName}
                             </td>
                             <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
                               {item.gender === 'Laki-laki' ? 'L' : 'P'}
                             </td>
-                            <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
+                            <td className="py-3 px-4 text-slate-700 font-medium whitespace-nowrap">
                               {item.primaryParentName}
                             </td>
                             <td className="py-3 px-4 font-mono text-slate-700 whitespace-nowrap tabular-nums">
-                              {item.primaryWhatsapp}
+                              <div className="inline-flex items-center gap-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>{item.primaryWhatsapp}</span>
+                              </div>
                             </td>
                             <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
                               {item.program}
                             </td>
                             <td className="py-3 px-4 whitespace-nowrap">
-                              <span
-                                className={`font-semibold ${statusTextColor(item.registrationStatus)}`}
-                              >
-                                {item.registrationStatus}
-                              </span>
+                              {statusBadge(item.registrationStatus)}
                             </td>
                             <td className="py-3 px-4 whitespace-nowrap">
-                              <span
-                                className={`font-semibold ${paymentTextColor(item.paymentStatusSummary)}`}
-                              >
-                                {item.paymentStatusSummary}
-                              </span>
+                              {paymentBadge(item.paymentStatusSummary)}
                             </td>
                             <td className="py-3 px-4 text-right whitespace-nowrap space-x-2">
                               <button
                                 type="button"
                                 onClick={() => void handleOpenDetail(item.registrationId)}
                                 disabled={loadingDetailId === item.registrationId}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg cursor-pointer"
+                                title="Lihat Detail"
+                                className="inline-flex items-center justify-center w-8 h-8 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-full cursor-pointer transition-colors"
                               >
                                 {loadingDetailId === item.registrationId ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 ) : (
                                   <Eye className="w-3.5 h-3.5" />
                                 )}
-                                <span>Detail</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteRegistration(item)}
                                 title="Hapus pendaftaran"
-                                className="inline-flex items-center p-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg cursor-pointer"
+                                className="inline-flex items-center justify-center w-8 h-8 text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-full cursor-pointer transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1118,26 +1127,66 @@ function StatCard({
   label,
   value,
   tone = 'slate',
+  icon: Icon = Users,
 }: {
   label: string;
   value: number;
-  tone?: 'slate' | 'emerald' | 'amber' | 'red';
+  tone?: 'slate' | 'emerald' | 'amber' | 'red' | 'blue' | 'purple';
+  icon?: any;
 }) {
+  const bgIcon =
+    tone === 'emerald'
+      ? 'bg-emerald-100 text-emerald-800'
+      : tone === 'amber'
+        ? 'bg-amber-100 text-amber-700'
+        : tone === 'red'
+          ? 'bg-red-100 text-red-700'
+          : tone === 'blue'
+            ? 'bg-blue-100 text-blue-700'
+            : tone === 'purple'
+              ? 'bg-purple-100 text-purple-700'
+              : 'bg-emerald-50 text-emerald-900';
+
+  const trendColor =
+    tone === 'emerald'
+      ? 'text-emerald-600'
+      : tone === 'amber'
+        ? 'text-amber-600'
+        : tone === 'red'
+          ? 'text-red-600'
+          : tone === 'purple'
+            ? 'text-purple-600'
+            : tone === 'blue'
+              ? 'text-blue-600'
+              : 'text-emerald-600';
+
   const valueColor =
     tone === 'emerald'
-      ? 'text-emerald-800'
+      ? 'text-emerald-900'
       : tone === 'amber'
-        ? 'text-amber-700'
+        ? 'text-amber-900'
         : tone === 'red'
-          ? 'text-red-700'
-          : 'text-slate-900';
+          ? 'text-red-900'
+          : tone === 'purple'
+            ? 'text-purple-900'
+            : tone === 'blue'
+              ? 'text-blue-900'
+              : 'text-slate-900';
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
-      <p className="text-xs font-medium text-slate-500 truncate">{label}</p>
-      <p className={`mt-1.5 font-display text-2xl font-bold tabular-nums ${valueColor}`}>
-        {value}
-      </p>
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-500 truncate">{label}</p>
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bgIcon}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+      </div>
+      <div className="flex items-end justify-between mt-3">
+        <p className={`font-display text-2xl font-bold tabular-nums ${valueColor}`}>
+          {value}
+        </p>
+        <TrendingUp className={`w-4 h-4 ${trendColor}`} />
+      </div>
     </div>
   );
 }
@@ -1173,4 +1222,38 @@ function paymentTextColor(status: string): string {
     default:
       return 'text-slate-600';
   }
+}
+
+function statusBadge(status: string) {
+  let badgeClass = 'bg-slate-100 text-slate-800';
+  if (status === 'Diterima' || status === 'Terdaftar') {
+    badgeClass = 'bg-emerald-50 text-emerald-800 border border-emerald-200';
+  } else if (status === 'Ditolak' || status === 'Mengundurkan Diri') {
+    badgeClass = 'bg-red-50 text-red-800 border border-red-200';
+  } else {
+    badgeClass = 'bg-amber-50 text-amber-800 border border-amber-200';
+  }
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      <span>{status}</span>
+    </span>
+  );
+}
+
+function paymentBadge(status: string) {
+  let badgeClass = 'bg-slate-100 text-slate-800';
+  if (status === 'Lunas') {
+    badgeClass = 'bg-emerald-50 text-emerald-800 border border-emerald-200';
+  } else if (status === 'Ditolak') {
+    badgeClass = 'bg-red-50 text-red-800 border border-red-200';
+  } else {
+    badgeClass = 'bg-amber-50 text-amber-800 border border-amber-200';
+  }
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      <span>{status}</span>
+    </span>
+  );
 }
