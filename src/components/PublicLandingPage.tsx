@@ -9,6 +9,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Printer,
   Smile,
   Sparkles,
   Star,
@@ -25,11 +26,13 @@ import { BrandMark } from './BrandMark';
 interface PublicLandingPageProps {
   academicYear: AcademicYearConfig;
   onStartRegistration: () => void;
+  onOpenBlankForm: () => void;
 }
 
 export function PublicLandingPage({
   academicYear,
   onStartRegistration,
+  onOpenBlankForm,
 }: PublicLandingPageProps) {
   const [heroImgError, setHeroImgError] = useState(false);
 
@@ -94,7 +97,7 @@ export function PublicLandingPage({
                 </div>
               </div>
 
-              {/* Tombol Mulai Isi Formulir */}
+              {/* Tombol Mulai Isi Formulir & Cetak Formulir Reguler PDF */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <button
                   type="button"
@@ -108,10 +111,15 @@ export function PublicLandingPage({
                   </span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <div className="text-xs text-slate-500">
-                  <p className="font-semibold text-slate-700">Tanpa Perlu Buat Akun</p>
-                  <p>Proses pengisian 8 bagian sangat mudah & dapat disimpan.</p>
-                </div>
+
+                <button
+                  type="button"
+                  onClick={onOpenBlankForm}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Printer className="w-4 h-4 text-emerald-800" />
+                  <span>Cetak Formulir Reguler (PDF)</span>
+                </button>
               </div>
 
               {!academicYear.isOpen && (

@@ -13,6 +13,7 @@ import {
   verifyAdminAccess,
 } from './services/ppdbService';
 import { AcademicYearConfig, AdminRole, RegistrationFullBundle } from './types/ppdb';
+import { BlankRegularFormPrint } from './components/BlankRegularFormPrint';
 
 const AdminDashboard = lazy(() =>
   import('./components/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
@@ -30,6 +31,7 @@ export default function App() {
   const [path, setPath] = useState<string>(() => normalizePath(window.location.pathname));
   const [academicYear, setAcademicYear] = useState<AcademicYearConfig>(DEFAULT_ACADEMIC_YEAR);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [showBlankForm, setShowBlankForm] = useState(false);
 
   const [submittedReceipt, setSubmittedReceipt] = useState<RegistrationFullBundle | null>(() => {
     try {
@@ -220,9 +222,17 @@ export default function App() {
             <PublicLandingPage
               academicYear={academicYear}
               onStartRegistration={() => navigate('/daftar')}
+              onOpenBlankForm={() => setShowBlankForm(true)}
             />
           )}
         </div>
+      )}
+
+      {showBlankForm && (
+        <BlankRegularFormPrint
+          academicYear={academicYear}
+          onClose={() => setShowBlankForm(false)}
+        />
       )}
     </ErrorBoundary>
   );
