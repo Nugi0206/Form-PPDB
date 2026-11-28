@@ -1492,6 +1492,12 @@ export function RegistrationFormWizard({
                   Rencana & Informasi Pembayaran
                 </h3>
 
+                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm">
+                  <p className="font-bold">Total Biaya Administrasi Pendaftaran (PPDB):</p>
+                  <p className="text-2xl font-mono font-bold text-emerald-950 mt-1">Rp 995.000</p>
+                  <p className="text-xs text-amber-800 mt-0.5">Dapat dibayar secara Lunas (Sekaligus) atau melalui skema Cicilan 3 Tahap.</p>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Pilihan Pembayaran" required>
                     <select

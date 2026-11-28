@@ -127,6 +127,7 @@ export function BlankRegularFormPrint({ academicYear, onClose }: BlankRegularFor
         {/* 5. Program & Pembayaran */}
         <BlankSection title="5. Pilihan Program & Administrasi Pembayaran">
           <BlankRow label="Pilihan Program" value="Program Reguler" />
+          <BlankRow label="Total Biaya Administrasi PPDB" value="Rp 995.000 (Sembilan Ratus Sembilan Puluh Lima Ribu Rupiah)" />
           <BlankRow label="Rencana Pembayaran" type="checkbox" options={['Lunas (Sekaligus)', 'Cicilan 3 Tahap']} />
           <BlankRow label="Metode Pembayaran" type="checkbox" options={['Transfer BRI', 'Tunai ke Bendahara']} />
           <div className="p-2 rounded border border-slate-300 bg-slate-50 text-[10px] space-y-0.5">
